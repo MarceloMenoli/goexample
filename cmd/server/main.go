@@ -4,37 +4,50 @@ import (
 	"log"
 	"os"
 
-	"github.com/gin-gonic/gin"
-
+	drinkHttp "goexample/internal/drink/delivery/http"
+	drinkPostgres "goexample/internal/drink/repository/postgres"
+	drinkUsecase "goexample/internal/drink/usecase"
 	userHttp "goexample/internal/user/delivery/http"
-	"goexample/internal/user/repository/postgres"
-	"goexample/internal/user/usecase"
+	userPostgres "goexample/internal/user/repository/postgres"
+	userUsecase "goexample/internal/user/usecase"
 	"goexample/pkg/db"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	// Inicializa o banco de dados
+	gin.SetMode(gin.ReleaseMode)
+
 	database := db.NewPostgresDB()
 
-	// Inicializa o repositório, caso de uso e o handler
-	userRepo := postgres.NewPostgresUserRepository(database)
-	userUsecase := usecase.NewUserUsecase(userRepo)
+	userRepo := userPostgres.NewPostgresUserRepository(database)
+	userUsecase := userUsecase.NewUserUsecase(userRepo)
 	userHandler := userHttp.NewUserHandler(userUsecase)
 
-	// Inicializa o servidor Gin
+	drinkRepo := drinkPostgres.NewPostgresDrinkRepository(database)
+	drinkUsecase := drinkUsecase.NewDrinkUsecase(drinkRepo)
+	drinkHandler := drinkHttp.NewDrinkHandler(drinkUsecase)
+
 	router := gin.Default()
 
-	// Definir a porta (pegando da variável de ambiente PORT ou definindo padrão 8080)
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	// Rotas para os usuários
-	router.POST("/users", userHandler.CreateUser) // Rota para criar usuário
-	router.GET("/users", userHandler.ListUsers)   // Rota para listar usuários
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Bem-vindo à API",
+		})
+	})
 
-	// Iniciar o servidor na porta definida
+	router.POST("/users", userHandler.CreateUser)
+	router.GET("/users", userHandler.ListUsers)
+
+	router.POST("/drinks", drinkHandler.CreateDrink)
+	router.GET("/drinks", drinkHandler.ListDrinks)
+	router.DELETE("/drinks", drinkHandler.DeleteDrink)
+
 	log.Printf("Servidor rodando na porta %s...\n", port)
 	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("Erro ao iniciar o servidor: %v", err)
