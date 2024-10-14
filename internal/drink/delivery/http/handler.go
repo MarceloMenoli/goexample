@@ -54,7 +54,7 @@ func (h *DrinkHandler) ListDrinks(c *gin.Context) {
 	}
 
 	// Retorna a lista de drinks
-	c.JSON(http.StatusOK, gin.H{"drinks": drinks})
+	c.JSON(http.StatusOK, drinks)
 }
 
 // DeleteDrink - Handler para deletar um drink por ID

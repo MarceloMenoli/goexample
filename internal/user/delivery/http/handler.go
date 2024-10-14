@@ -51,5 +51,5 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 	}
 
 	// Retorna a lista de usuários
-	c.JSON(http.StatusOK, gin.H{"users": users})
+	c.JSON(http.StatusOK, users)
 }
