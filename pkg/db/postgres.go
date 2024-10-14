@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 
+	"goexample/internal/drink"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -14,6 +16,10 @@ func NewPostgresDB() *gorm.DB {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Falha ao conectar ao banco de dados:", err)
+	}
+
+	if err := db.AutoMigrate(&drink.Drink{}); err != nil {
+		log.Fatal("Falha ao migrar a tabela de drinks:", err)
 	}
 	return db
 }
