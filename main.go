@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
+	"os"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -28,10 +30,18 @@ func main() {
 
 	fmt.Println("Conexão ao PostgreSQL com GORM realizada com sucesso!")
 
-	// Exemplo de inserção (descomente para testar)
-	//_, err = db.Exec("INSERT INTO usuarios (nome, email) VALUES ('Fulano', 'fulano@email.com')")
-	//if err != nil {
-	//	log.Fatalf("Erro ao inserir dados: %v", err)
-	//}
-	//fmt.Println("Dados inseridos com sucesso!")
+	// Definir a porta (pegando da variável de ambiente PORT ou definindo padrão 8080)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	// Rota simples para verificar se o servidor está funcionando
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Conexão ao PostgreSQL com GORM realizada com sucesso!")
+	})
+
+	// Iniciar o servidor HTTP na porta definida
+	fmt.Printf("Servidor rodando na porta %s...\n", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
