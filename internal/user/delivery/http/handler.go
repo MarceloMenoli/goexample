@@ -1,10 +1,10 @@
-// internal/user/delivery/http/handler.go
 package http
 
 import (
-	"encoding/json"
 	"goexample/internal/user/usecase"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type UserHandler struct {
@@ -15,45 +15,41 @@ func NewUserHandler(u usecase.UserUsecase) *UserHandler {
 	return &UserHandler{userUsecase: u}
 }
 
-func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
-		return
-	}
-
+// CreateUser - Handler para criar um novo usuário
+func (h *UserHandler) CreateUser(c *gin.Context) {
 	var input struct {
 		Name string `json:"name"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "Erro ao decodificar JSON", http.StatusBadRequest)
+	// Decodifica o JSON recebido na requisição
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Erro ao decodificar JSON"})
 		return
 	}
 
-	if err := h.userUsecase.CreateUser(input.Name); err != nil {
-		http.Error(w, "Erro ao criar usuário", http.StatusInternalServerError)
+	// Chama o caso de uso para criar um novo usuário
+	user, err := h.userUsecase.CreateUser(input.Name)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao criar usuário"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	// Retorna a resposta com o usuário criado
+	c.JSON(http.StatusCreated, gin.H{
 		"message": "Usuário criado com sucesso",
+		"user":    user,
 	})
 }
 
-func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
-		return
-	}
-
+// ListUsers - Handler para listar todos os usuários
+func (h *UserHandler) ListUsers(c *gin.Context) {
+	// Chama o caso de uso para listar os usuários
 	users, err := h.userUsecase.GetAllUsers()
 	if err != nil {
-		http.Error(w, "Erro ao listar usuários", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao listar usuários"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
+	// Retorna a lista de usuários
+	c.JSON(http.StatusOK, gin.H{"users": users})
 }
