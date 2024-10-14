@@ -1,4 +1,3 @@
-// internal/user/usecase/usecase.go
 package usecase
 
 import (
@@ -7,7 +6,7 @@ import (
 )
 
 type UserUsecase interface {
-	CreateUser(name string) error
+	CreateUser(name string) (*user.User, error) // Retornar o usuário criado e o erro, se houver
 	GetAllUsers() ([]user.User, error)
 }
 
@@ -19,9 +18,10 @@ func NewUserUsecase(repo repository.UserRepository) UserUsecase {
 	return &userUsecase{repo: repo}
 }
 
-func (u *userUsecase) CreateUser(name string) error {
+func (u *userUsecase) CreateUser(name string) (*user.User, error) {
 	newUser := &user.User{Name: name}
-	return u.repo.Create(newUser)
+	err := u.repo.Create(newUser)
+	return newUser, err // Agora retornamos o usuário criado e o erro
 }
 
 func (u *userUsecase) GetAllUsers() ([]user.User, error) {
