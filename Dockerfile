@@ -1,5 +1,5 @@
 # Etapa de build
-FROM golang:1.21-alpine AS builder
+FROM golang:1.22-alpine AS builder
 
 # Configura o diretório de trabalho dentro do container
 WORKDIR /app
