@@ -7,4 +7,5 @@ type Drink struct {
 	Description string `json:"description"`
 	IsAlcoholic bool   `json:"is_alcoholic"`
 	Rating      int    `json:"rating"`
+	ImageURL    string `json:"image_url"`
 }

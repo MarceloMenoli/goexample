@@ -11,12 +11,12 @@ import (
 	userPostgres "goexample/internal/user/repository/postgres"
 	userUsecase "goexample/internal/user/usecase"
 	"goexample/pkg/db"
+	"goexample/pkg/storage"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	gin.SetMode(gin.ReleaseMode)
 
 	database := db.NewPostgresDB()
 
@@ -25,7 +25,24 @@ func main() {
 	userHandler := userHttp.NewUserHandler(userUsecase)
 
 	drinkRepo := drinkPostgres.NewPostgresDrinkRepository(database)
-	drinkUsecase := drinkUsecase.NewDrinkUsecase(drinkRepo)
+
+	accessKey := os.Getenv("R2_ACCESS_KEY")
+	secretKey := os.Getenv("R2_SECRET_KEY")
+	accountID := os.Getenv("R2_ACCOUNT_ID")
+	bucketName := os.Getenv("R2_BUCKET_NAME")
+
+	if accessKey == "" || secretKey == "" || accountID == "" || bucketName == "" {
+		log.Fatal("As credenciais do Cloudflare R2 não estão definidas nas variáveis de ambiente")
+	}
+
+	r2Storage, err := storage.NewR2Storage(accessKey, secretKey, accountID, bucketName)
+	if err != nil {
+		log.Fatalf("Erro ao inicializar o R2Storage: %v", err)
+	}
+
+	gin.SetMode(gin.ReleaseMode)
+
+	drinkUsecase := drinkUsecase.NewDrinkUsecase(drinkRepo, r2Storage)
 	drinkHandler := drinkHttp.NewDrinkHandler(drinkUsecase)
 
 	router := gin.Default()

@@ -3,6 +3,7 @@ package http
 import (
 	"goexample/internal/drink/usecase"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,22 +18,55 @@ func NewDrinkHandler(u usecase.DrinkUsecase) *DrinkHandler {
 
 // CreateDrink - Handler para criar um novo drink
 func (h *DrinkHandler) CreateDrink(c *gin.Context) {
-	var input struct {
-		Name        string `json:"name"`
-		Ingredients string `json:"ingredients"`
-		Description string `json:"description"`
-		IsAlcoholic bool   `json:"is_alcoholic"`
-		Rating      int    `json:"rating"`
-	}
 
-	// Decodifica o JSON recebido na requisição
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Erro ao decodificar JSON"})
+	contentType := c.ContentType()
+	if contentType != "multipart/form-data" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Tipo de conteúdo deve ser multipart/form-data"})
 		return
 	}
 
-	// Chama o caso de uso para criar um novo drink
-	drink, err := h.drinkUsecase.CreateDrink(input.Name, input.Ingredients, input.Description, input.IsAlcoholic, input.Rating)
+	name := c.PostForm("name")
+	ingredients := c.PostForm("ingredients")
+	description := c.PostForm("description")
+	isAlcoholicStr := c.PostForm("is_alcoholic")
+	ratingStr := c.PostForm("rating")
+
+	if name == "" || ingredients == "" || description == "" || isAlcoholicStr == "" || ratingStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Todos os campos são obrigatórios"})
+		return
+	}
+
+	// Converter isAlcoholic para bool
+	isAlcoholic, err := strconv.ParseBool(isAlcoholicStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Valor inválido para is_alcoholic"})
+		return
+	}
+
+	// Converter rating para int
+	rating, err := strconv.Atoi(ratingStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Valor inválido para rating"})
+		return
+	}
+
+	// Obter o arquivo de imagem
+	fileHeader, err := c.FormFile("image")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Imagem é obrigatória"})
+		return
+	}
+
+	// Abrir o arquivo
+	file, err := fileHeader.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao abrir o arquivo de imagem"})
+		return
+	}
+	defer file.Close()
+
+	// Chamar o caso de uso para criar um novo drink
+	drink, err := h.drinkUsecase.CreateDrink(name, ingredients, description, isAlcoholic, rating, file, fileHeader.Filename)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao criar drink"})
 		return
