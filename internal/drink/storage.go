@@ -5,5 +5,5 @@ import (
 )
 
 type Storage interface {
-	UploadFile(key string, body io.ReadSeeker, contentType string) (string, error)
+	UploadFile(key string, body io.ReadSeeker, contentType string) error
 }

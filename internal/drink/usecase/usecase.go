@@ -4,6 +4,7 @@ import (
 	"goexample/internal/drink"
 	"goexample/internal/drink/repository"
 	"io"
+	"os"
 )
 
 type DrinkUsecase interface {
@@ -23,10 +24,10 @@ func NewDrinkUsecase(repo repository.DrinkRepository, storage drink.Storage) Dri
 
 func (u *drinkUsecase) CreateDrink(name, ingredients, description string, isAlcoholic bool, rating int, image io.ReadSeeker, imageName string) (*drink.Drink, error) {
 
-	contentType := "image/jpeg" // Ajuste conforme o tipo de imagem
+	contentType := "image/jpeg"
 	key := "images/drinks/" + imageName
 
-	imageURL, err := u.storage.UploadFile(key, image, contentType)
+	err := u.storage.UploadFile(key, image, contentType)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +38,7 @@ func (u *drinkUsecase) CreateDrink(name, ingredients, description string, isAlco
 		Description: description,
 		IsAlcoholic: isAlcoholic,
 		Rating:      rating,
-		ImageURL:    imageURL,
+		ImageURL:    key,
 	}
 	err = u.repo.Create(newDrink)
 	if err != nil {
@@ -47,7 +48,21 @@ func (u *drinkUsecase) CreateDrink(name, ingredients, description string, isAlco
 }
 
 func (u *drinkUsecase) GetAllDrinks() ([]drink.Drink, error) {
-	return u.repo.GetAll()
+	drinks, err := u.repo.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	baseURL := os.Getenv("IMAGE_BASE_URL")
+	if baseURL == "" {
+		baseURL = "https://pub-6b789ba0558c422f921e39eee0f551a6.r2.dev/"
+	}
+
+	for i, drink := range drinks {
+		drinks[i].ImageURL = baseURL + drink.ImageURL
+	}
+
+	return drinks, nil
 }
 
 func (u *drinkUsecase) DeleteDrinkByID(id uint) error {

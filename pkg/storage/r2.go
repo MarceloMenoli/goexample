@@ -38,7 +38,7 @@ func NewR2Storage(accessKey, secretKey, accountID, bucket string) (*R2Storage, e
 	}, nil
 }
 
-func (r *R2Storage) UploadFile(key string, body io.ReadSeeker, contentType string) (string, error) {
+func (r *R2Storage) UploadFile(key string, body io.ReadSeeker, contentType string) error {
 	input := &s3.PutObjectInput{
 		Body:        body,
 		Bucket:      aws.String(r.bucket),
@@ -48,9 +48,8 @@ func (r *R2Storage) UploadFile(key string, body io.ReadSeeker, contentType strin
 
 	_, err := r.svc.PutObject(input)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	url := fmt.Sprintf("%s/%s/%s", r.url, r.bucket, key)
-	return url, nil
+	return nil
 }
