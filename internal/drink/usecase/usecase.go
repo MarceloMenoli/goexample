@@ -59,7 +59,9 @@ func (u *drinkUsecase) GetAllDrinks() ([]drink.Drink, error) {
 	}
 
 	for i, drink := range drinks {
-		drinks[i].ImageURL = baseURL + drink.ImageURL
+		if drink.ImageURL != "" {
+			drinks[i].ImageURL = baseURL + drink.ImageURL
+		}
 	}
 
 	return drinks, nil
